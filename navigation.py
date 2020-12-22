@@ -1,33 +1,14 @@
-from agent import Agent, LearningStrategy
-from collections import deque
 import os
+from collections import deque
 import torch
 import numpy as np
-import gym
 import click
-from unityagents import UnityEnvironment
-import numpy as np
 import matplotlib.pyplot as plt
 import yaml
-import pandas
-from itertools import chain
-from enum import Enum
-
-
-solution_directory = os.path.abspath(os.path.dirname(__file__))
-environments_directory = os.path.join(solution_directory, 'unity_environments')
-
-
-class BananaEnv(Enum):
-    STANDARD = 'Banana_Linux/Banana.x86_64'
-    HEADLESS = 'Banana_Linux_NoVis/Banana.x86_64'
-    VISUAL = 'VisualBanana_Linux/Banana.x86_64'
-
-
-def get_environment_executable(environment: BananaEnv):
-    assert type(environment) is BananaEnv
-    print(environments_directory, environment)
-    return os.path.join(environments_directory, environment.value)
+from unityagents import UnityEnvironment
+from agent import Agent, LearningStrategy, TargetNetworkUpdateStrategy
+from utils import get_env, get_env_properties, get_next_results_directory, \
+    load_results, solution_directory, results_directory
 
 
 def unity_dqn(
@@ -40,18 +21,26 @@ def unity_dqn(
     checkpoint_directory = "./checkpoints",
     keep_training: bool = True
     ):
-
     """Deep Q-Learning.
-    
-    Params
-    ======
-        env (UnityEnvironment): UnityEnvironment with which the agent will interact
-        agent (Agent): Specific implmentation of the agent that will interact with the environment
-        n_episodes (int): maximum number of training episodes
-        max_t (int): maximum number of timesteps per episode
-        eps_start (float): starting value of epsilon, for epsilon-greedy action selection
-        eps_end (float): minimum value of epsilon
-        eps_decay (float): multiplicative factor (per episode) for decreasing epsilon
+
+    :param env: UnityEnvironment with which the agent will interact.
+    :type env: UnityEnvironment
+    :param agent: Specific instance of the agent that will interact with the environment.
+    :type agent: Agent
+    :param n_episodes: Maximum number of training episodes, defaults to 10.
+    :type n_episodes: int, optional
+    :param eps_start: Starting value of epsilon, for epsilon-greedy action selection, defaults to 1.0
+    :type eps_start: float, optional
+    :param eps_end: Minimum value of epsilon, defaults to 0.01
+    :type eps_end: float, optional
+    :param eps_decay: Multiplicative factor (per episode) for decreasing epsilon, defaults to 0.995
+    :type eps_decay: float, optional
+    :param checkpoint_directory: [description], defaults to "./checkpoints"
+    :type checkpoint_directory: str, optional
+    :param keep_training: [description], defaults to True
+    :type keep_training: bool, optional
+    :return: [description]
+    :rtype: [type]
     """
 
     assert type(env) is UnityEnvironment, "Misspecfied environment, expected {}".format(UnityEnvironment)
@@ -62,7 +51,6 @@ def unity_dqn(
 
     # Obtain the brain that will control the agent.
     brain_name = env.brain_names[0]
-    brain = env.brains[brain_name]
 
     scores = []                        # list containing scores from each episode
     scores_window = deque(maxlen=100)  # last 100 scores
@@ -105,8 +93,14 @@ def unity_dqn(
 
 
 def run_agent(env, trained_agent):
+    """[summary]
+
+    :param env: [description]
+    :type env: [type]
+    :param trained_agent: [description]
+    :type trained_agent: [type]
+    """
     brain_name = env.brain_names[0]
-    brain = env.brains[brain_name]
 
     env_info = env.reset(train_mode=False)[brain_name] # reset the environment
     state = env_info.vector_observations[0]            # get the current state
@@ -123,41 +117,27 @@ def run_agent(env, trained_agent):
             break
         
 
-def get_env(headless):
-    env = BananaEnv.HEADLESS if headless else BananaEnv.STANDARD
-    env_location = get_environment_executable(env)
-    print(f"Getting environment from {env_location}")
-    env = UnityEnvironment(file_name=env_location)
-    return env
-
-
-def get_env_properties(env: UnityEnvironment):
-    brain_name = env.brain_names[0]
-    brain = env.brains[brain_name]
-    action_size = brain.vector_action_space_size
-    print('Number of actions:', action_size)
-    env_info = env.reset(train_mode=True)[brain_name]
-    state = env_info.vector_observations[0]
-    state_size = len(state)
-    print('State size:', state_size)
-    return action_size, state_size
-
-
 @click.group()
 def cli():
     pass
 
 
 @cli.command()
-@click.option("--learning-strategy", required=False, default = 'DQN', type = click.Choice(['DQN', 'DDQN']))
-def run(learning_strategy):
+@click.option("--checkpoint-path", required=False, type = str, 
+help="Path to a checkpoints file with which to obtain learned DQN weights.")
+def run(checkpoint_path):
     env = get_env(False)
 
     action_size, state_size = get_env_properties(env)
 
-    agent = Agent(state_size=state_size, action_size=action_size, seed=0, learning_strategy=LearningStrategy[learning_strategy])
+    # Create an agent to receive the values of the DQNs. Only the state size
+    # and action size are important when running a trained agent.
+    agent = Agent(state_size=state_size, action_size=action_size, seed=0, 
+    learning_strategy=LearningStrategy.DDQN, 
+    target_network_update_strategy=TargetNetworkUpdateStrategy.SOFT)
 
-    checkpoint = os.path.join(solution_directory, f'./checkpoints/{learning_strategy}/solved_checkpoint.pth')
+    if checkpoint_path is None:
+        checkpoint = os.path.join(solution_directory, f'checkpoints/solved_checkpoint.pth')
 
     agent.qnetwork_local.load_state_dict(torch.load(checkpoint, map_location=lambda storage, loc: storage))
 
@@ -165,17 +145,27 @@ def run(learning_strategy):
 
 
 @cli.command()
-@click.option("--learning-strategy", required=False, default = 'DQN', type = click.Choice(['DQN', 'DDQN']))
-@click.option("--n-episodes", required=False, default=4000)
-@click.option("--headless", required=False, is_flag=True)
-@click.option("--keep-training", required=False, is_flag=True)
-@click.option("--checkpoint", required=False, type=str, default=None)
-def train(learning_strategy, n_episodes, headless, checkpoint, keep_training):
+@click.option("--learning-strategy", required=False, default = 'DQN', 
+type = click.Choice(['DQN', 'DDQN']), help="Train the agent using DQN or DDQN.")
+@click.option("--update-type", required=False, default = 'soft', 
+type = click.Choice(['soft', 'hard']), help="Use soft updates or hard updates for 'fixed-Q' TD targets.")
+@click.option("--n-episodes", required=False, default=4000, help="Number of episodes after which training will terminate.")
+@click.option("--headless", required=False, is_flag=True, 
+help="Train the agent using the headless environment.")
+@click.option("--keep-training", required=False, is_flag=True,
+ help="Continue training the agent up to n-episodes after the solved condition is met.")
+@click.option("--checkpoint", required=False, type=str, default=None, help="Path to a previously trained Agent's PyTorch checkpoint, if specified the Agents network will be initialised using the weights therein.")
+def train(learning_strategy, update_type, n_episodes, headless, checkpoint, keep_training):
     env = get_env(headless)
 
     action_size, state_size = get_env_properties(env)
 
-    agent = Agent(state_size=state_size, action_size=action_size, seed=0, learning_strategy=LearningStrategy[learning_strategy])
+    agent = Agent(
+        state_size=state_size, 
+        action_size=action_size, 
+        seed=0,
+        learning_strategy=LearningStrategy[learning_strategy],
+        target_network_update_strategy=TargetNetworkUpdateStrategy[update_type.upper()])
 
     if checkpoint is not None:
         agent.qnetwork_local.load_state_dict(torch.load(checkpoint, map_location=lambda storage, loc: storage))
@@ -184,49 +174,56 @@ def train(learning_strategy, n_episodes, headless, checkpoint, keep_training):
     scores = unity_dqn(env, agent, n_episodes=n_episodes, checkpoint_directory=checkpoint_directory, keep_training=keep_training)
     np.savetxt(f'{checkpoint_directory}/scores.txt', scores)
 
+    params = {
+        'learning_strategy': learning_strategy, 
+        'update_type': update_type
+        }
 
-def load_results(learning_strategy: str, n_points: int):
-    checkpoint_directory = f'checkpoints/{learning_strategy}'
-    scores_file = os.path.join(solution_directory, checkpoint_directory, 'scores.txt')
-    scores = pandas.Series(np.loadtxt(scores_file)[:n_points])
-    rolling_window = 100
-    ma = scores.rolling(rolling_window, center=True).mean()
-    x = np.arange(len(ma))
-    return scores, ma, x
+    next_results_directory = os.path.join(results_directory, get_next_results_directory())
+    if not os.path.exists(next_results_directory):
+        os.mkdir(next_results_directory)
+    
+    np.savetxt(f'{next_results_directory}/scores.txt', scores)
+    with open(f'{next_results_directory}/parameters.yml', 'w') as f:
+        yaml.dump(params, f)
 
 
 @cli.command()
-@click.option("--learning-strategy", required=False, default = 'DQN', type = click.Choice(['DQN', 'DDQN']))
-def plot_results(learning_strategy):
-    conf_path = os.path.join(solution_directory, 'conf/plot_results.yml')
-    with open(conf_path, 'r') as f:
-        conf =  yaml.load(f, Loader=yaml.BaseLoader)
-        n_points = int(conf['n_points'])
+def plot_results():
+    results_directories = os.listdir(results_directory)
+    n_directories = len(results_directories)
+    scale = 3.0
+
+    fig, axes = plt.subplots(ncols=1, nrows=(n_directories+1), figsize=(1.5*scale, scale*(n_directories+1)))
     
-    checkpoint_directory = f'checkpoints/{learning_strategy}'
-    scores_file = os.path.join(solution_directory, checkpoint_directory, 'scores.txt')
-    scores = pandas.Series(np.loadtxt(scores_file)[:n_points])
-    
-    fig, ax = plt.subplots(figsize=(6, 4))
-    ax.plot(scores, alpha=0.5)
+    to_compare = []
+    for i, directory in enumerate(results_directories):
+        scores, ma, x, conf = load_results(directory)
+        ax = axes[i]
+        ax.plot(scores)
+        series_label = f"{conf['learning_strategy']}, {conf['update_type']}"
+        ax.plot(x, ma, label=series_label)
+        to_compare.append([x, ma, series_label])
 
-    rolling_window = 100
-    ma = scores.rolling(rolling_window, center=True).mean()
-    x = np.arange(len(ma))
-    ax.plot(x, ma, label='100-episode average')
-    print(min(x), max(x))
-    ax.set_xlabel("Episodes")
-    ax.set_ylabel("Score")
+    [axes[-1].plot(x[0], x[1], label=x[2]) for x in to_compare]
 
-    plt.axhline(y=13, ls='dashed', color='k', label='solved')
-    yticks = range(0, 25, 2)
-    ax.set_yticks(yticks)
+    for ax in axes:
+        ax.axhline(y=13, ls='dashed', c='k')
+        ax.legend()
+        ax.set_xlabel("Episodes")
+        ax.set_ylabel("Score")
 
-    scores_plot = os.path.join(solution_directory, f'resources/{learning_strategy}_scores.png')
-    plt.legend()
+    #plt.axhline(y=13, ls='dashed', color='k', label='solved')
+    #yticks = range(0, 25, 2)
+    #ax.set_yticks(yticks)
 
-    plt.tight_layout()
-    plt.savefig(scores_plot, dpi=400)
+    #fname = f'resources/{learning_strategy}_scores.png' if learning_strategy is not None else 'resources/all_scores.png'
+
+    #scores_plot = os.path.join(solution_directory, fname)
+    #plt.legend()
+
+    plt.tight_layout(pad=1.2)
+    plt.savefig(os.path.join(solution_directory, 'resources', 'comparison.png'), dpi=400)
     plt.show()
 
 

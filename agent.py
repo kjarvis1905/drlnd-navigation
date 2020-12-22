@@ -16,6 +16,7 @@ GAMMA = 0.99            # discount factor
 TAU = 1e-3              # for soft update of target parameters
 LR = 5e-4               # learning rate 
 UPDATE_EVERY = 4        # how often to update the network
+COPY_WEIGHTS_EVERY = 50 # how often to update the target network using local weights
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
@@ -23,11 +24,16 @@ class LearningStrategy(Enum):
     DQN = 1
     DDQN = 2
 
+class TargetNetworkUpdateStrategy(Enum):
+    SOFT = 1
+    HARD = 2
+
 class Agent():
     """Interacts with and learns from the environment."""
 
     def __init__(self, state_size, action_size, seed, 
-    learning_strategy: LearningStrategy, hidden_layer_width: int = 64):
+    learning_strategy: LearningStrategy, target_network_update_strategy: TargetNetworkUpdateStrategy,
+    hidden_layer_width: int = 64):
         """Initialize an Agent object.
         
         Params
@@ -50,6 +56,7 @@ class Agent():
         self.memory = ReplayBuffer(action_size, BUFFER_SIZE, BATCH_SIZE, seed)
         # Initialize time step (for updating every UPDATE_EVERY steps)
         self.t_step = 0
+        self.tt_step = 0
 
         self.learning_strategy = learning_strategy
 
@@ -57,6 +64,13 @@ class Agent():
             self.learn = self.learn_dqn
         elif self.learning_strategy == LearningStrategy.DDQN:
             self.learn = self.learn_ddqn
+
+        self.target_network_update_strategy = target_network_update_strategy
+
+        if self.target_network_update_strategy == TargetNetworkUpdateStrategy.SOFT:
+            self.update_target_network = self.soft_update
+        elif self.target_network_update_strategy == TargetNetworkUpdateStrategy.HARD:
+            self.update_target_network = self.hard_update
 
         self.loss = torch.nn.MSELoss()
     
@@ -71,6 +85,15 @@ class Agent():
             if len(self.memory) > BATCH_SIZE:
                 experiences = self.memory.sample()
                 self.learn(experiences, GAMMA)
+            if self.target_network_update_strategy == TargetNetworkUpdateStrategy.SOFT:
+                # ------------------- update target network ------------------- #
+                self.soft_update(self.qnetwork_local, self.qnetwork_target, TAU)   
+
+        if self.target_network_update_strategy == TargetNetworkUpdateStrategy.HARD:
+            self.tt_step = (self.tt_step + 1) % COPY_WEIGHTS_EVERY
+            if self.tt_step == 0:
+                self.update_target_network(self.qnetwork_local, self.qnetwork_target)
+
 
     def act(self, state, eps=0.):
         """Returns actions for given state as per current policy.
@@ -112,9 +135,6 @@ class Agent():
         output.backward()
         self.optimizer.step()
 
-        # ------------------- update target network ------------------- #
-        self.soft_update(self.qnetwork_local, self.qnetwork_target, TAU)   
-
 
     def learn_ddqn(self, experiences, gamma):
         """Update value parameters using given batch of experience tuples.
@@ -141,9 +161,7 @@ class Agent():
         self.optimizer.zero_grad()
         output.backward()
         self.optimizer.step()
-
-        # ------------------- update target network ------------------- #
-        self.soft_update(self.qnetwork_local, self.qnetwork_target, TAU)                     
+                  
 
     def soft_update(self, local_model, target_model, tau):
         """Soft update model parameters.
@@ -157,6 +175,17 @@ class Agent():
         """
         for target_param, local_param in zip(target_model.parameters(), local_model.parameters()):
             target_param.data.copy_(tau*local_param.data + (1.0-tau)*target_param.data)
+
+    def hard_update(self, local_model, target_model):
+        """Hard update model parameters.
+
+        Params
+        ======
+            local_model (PyTorch model): weights will be copied from
+            target_model (PyTorch model): weights will be copied to
+        """
+        for target_param, local_param in zip(target_model.parameters(), local_model.parameters()):
+            target_param.data.copy_(local_param.data)
 
 
 class ReplayBuffer:

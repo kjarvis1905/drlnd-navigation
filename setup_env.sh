@@ -4,6 +4,10 @@ FILE=`readlink -f $0`
 DIR=`dirname $FILE`
 ENV_NAME="drlndtest"
 
+# Eval the conda bash hook
+
+eval "$(conda shell.bash hook)"
+
 # Setup the environment
 
 ENV_FILE="$DIR/conda_env.yml"
@@ -25,11 +29,13 @@ fi
 
 conda activate $ENV_NAME
 
+eval "pip install gym['box2d']"
+
 DRLND_URL="https://github.com/udacity/deep-reinforcement-learning/"
 
 echo "Installing requirements from $DRLND_URL"
 
-python -m pip install -e "git+$DRLND_URL#egg=unityagents&subdirectory=python"
+pip install -e "git+$DRLND_URL#egg=unityagents&subdirectory=python"
 
-conda install --name $ENV_NAME --file "conda_requirements.txt" 
+pip install -r "$DIR/conf/extra_requirements.txt"
 
