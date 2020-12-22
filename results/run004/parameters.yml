@@ -1,0 +1,2 @@
+learning_strategy: DQN
+update_type: soft
