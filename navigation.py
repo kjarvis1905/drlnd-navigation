@@ -1,5 +1,6 @@
 import os
 from collections import deque
+from itertools import chain
 import torch
 import numpy as np
 import click
@@ -195,6 +196,7 @@ def plot_results():
     scale = 3.0
 
     fig, axes = plt.subplots(ncols=1, nrows=(n_directories+1), figsize=(1.5*scale, scale*(n_directories+1)))
+    fig2, axes2 = plt.subplots(figsize=(4.5, 3))
     
     to_compare = []
     for i, directory in enumerate(results_directories):
@@ -204,11 +206,13 @@ def plot_results():
         series_label = f"{conf['learning_strategy']}, {conf['update_type']}"
         ax.plot(x, ma, label=series_label)
         to_compare.append([x, ma, series_label])
-
-    [axes[-1].plot(x[0], x[1], label=x[2]) for x in to_compare]
-
-    for ax in axes:
         ax.axhline(y=13, ls='dashed', c='k')
+
+    for ax in [axes[-1], axes2]:
+        [ax.plot(x[0], x[1], label=x[2]) for x in to_compare]
+
+    for ax in chain(axes, [axes2]):
+        ax.axhline(y=13, ls='dashed', c='k', label='solved')
         ax.legend()
         ax.set_xlabel("Episodes")
         ax.set_ylabel("Score")
@@ -222,8 +226,12 @@ def plot_results():
     #scores_plot = os.path.join(solution_directory, fname)
     #plt.legend()
 
+    plt.figure(fig.number)
     plt.tight_layout(pad=1.2)
-    plt.savefig(os.path.join(solution_directory, 'resources', 'comparison.png'), dpi=400)
+    plt.savefig(os.path.join(solution_directory, 'resources', 'comparison_full.png'), dpi=400)
+    plt.figure(fig2.number)
+    plt.tight_layout(pad=1.2)
+    plt.savefig(os.path.join(solution_directory, 'resources', 'comparison_summary.png'), dpi=400)
     plt.show()
 
 

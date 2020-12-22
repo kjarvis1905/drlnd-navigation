@@ -92,8 +92,12 @@ Options:
 
 ## Results
 
-For a more thorough investigation and presentation of results see [Report.md](Report.md).
+For a more thorough investigation and presentation of results, and discussion of training strategies, see [Report.md](Report.md).
 
-<img src="./resources/DDQN_scores.png" width="300"/>
+The image below shows a comparison of the scores (averaged over 100 episodes) of agents trained with a number of different strategies.
+
+<img src="./resources/comparison_summary.png" width="300"/>
+
+The video below shows a trained agent navigating the environment. The scores obtained by this agent in training are show by the green curve in the image above.
 
 <img src="./resources/Navigation1.gif" width="300"/>
