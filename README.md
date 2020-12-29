@@ -12,7 +12,7 @@ The environment is considered to have been resolved when the agent collects an a
 
 ## Getting Started
 
-The `setup_env.sh` script can be used to create and configure an environment with all the required dependencies to run the included code. The script assumes `conda` is available. 
+The `setup_env.sh` script can be used to create and configure an environment with all the required dependencies to run the included code. The script assumes `conda` is available. The script requires 1 argument, which is the name that will be given to the created conda environment. E.g. `./setup_env.sh drlnd` will create a conda environment named 'drlnd' in which all the included code and programs should run.
 
 In addition, a number of pre-built _Unity_ environments are required. They can be
 obtained by running the included script `./get_unity_envs.sh`. Alternatively, 

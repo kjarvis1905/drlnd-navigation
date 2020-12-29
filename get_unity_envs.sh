@@ -29,11 +29,3 @@ for ENV in "${envs[@]}"
 do
     get_unity_env $ENV
 done
-
-
-
-#https://s3-us-west-1.amazonaws.com/udacity-drlnd/P1/Banana/Banana_Linux.zip
-
-#https://s3-us-west-1.amazonaws.com/udacity-drlnd/P1/Banana/Banana_Linux_NoVis.zip
-
-#https://s3-us-west-1.amazonaws.com/udacity-drlnd/P1/Banana/VisualBanana_Linux.zip
