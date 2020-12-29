@@ -1,14 +1,12 @@
+from enum import Enum
+from collections import namedtuple, deque
 import numpy as np
 import random
-from collections import namedtuple, deque
-
-from model import QNetwork
-
 import torch
 import torch.nn.functional as F
 import torch.optim as optim
+from model import QNetwork
 
-from enum import Enum
 
 BUFFER_SIZE = int(1e5)  # replay buffer size
 BATCH_SIZE = 64         # minibatch size
@@ -31,16 +29,28 @@ class TargetNetworkUpdateStrategy(Enum):
 class Agent():
     """Interacts with and learns from the environment."""
 
-    def __init__(self, state_size, action_size, seed, 
-    learning_strategy: LearningStrategy, target_network_update_strategy: TargetNetworkUpdateStrategy,
-    hidden_layer_width: int = 64):
-        """Initialize an Agent object.
-        
-        Params
-        ======
-            state_size (int): dimension of each state
-            action_size (int): dimension of each action
-            seed (int): random seed
+    def __init__(
+        self, 
+        state_size: int, 
+        action_size: int, 
+        seed,
+        learning_strategy: LearningStrategy, 
+        target_network_update_strategy: TargetNetworkUpdateStrategy,
+        hidden_layer_width: int = 64):
+        """Initialise an Agent object.
+
+        :param state_size: Dimension of input state to DQN.
+        :type state_size: int
+        :param action_size: Dimension of output action vector from DQN.
+        :type action_size: int
+        :param seed: Seed for random state intialisation.
+        :type seed: numeric
+        :param learning_strategy: Whether to use DQN or DDQN learning algorithms.
+        :type learning_strategy: LearningStrategy
+        :param target_network_update_strategy: Whether to use hard or soft updates when updating the fixed-Q target networks.
+        :type target_network_update_strategy: TargetNetworkUpdateStrategy
+        :param hidden_layer_width: Size of intermediate , defaults to 64
+        :type hidden_layer_width: int, optional
         """
         self.state_size = state_size
         self.action_size = action_size

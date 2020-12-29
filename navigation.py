@@ -93,14 +93,15 @@ def unity_dqn(
     return scores
 
 
-def run_agent(env, trained_agent):
-    """[summary]
-
-    :param env: [description]
-    :type env: [type]
-    :param trained_agent: [description]
-    :type trained_agent: [type]
+def run_agent(env: UnityEnvironment, trained_agent: Agent):
+    """Run a trained agent in an environment.
+    
+    :param env: Initialised environment object.
+    :type env: UnityEnvironment
+    :param trained_agent: Initialised agent object.
+    :type trained_agent: Agent
     """
+
     brain_name = env.brain_names[0]
 
     env_info = env.reset(train_mode=False)[brain_name] # reset the environment
@@ -124,9 +125,12 @@ def cli():
 
 
 @cli.command()
-@click.option("--checkpoint-path", required=False, type = str, 
-help="Path to a checkpoints file with which to obtain learned DQN weights.")
+@click.option("--checkpoint-path", required=False, type = str, \
+    help="Path to a checkpoints file with which to obtain learned DQN weights.")
 def run(checkpoint_path):
+    """Program that initialises an agent using saved DQN weights and allows the
+    agent to explore an environment.
+    """
     env = get_env(False)
 
     action_size, state_size = get_env_properties(env)
@@ -146,17 +150,26 @@ def run(checkpoint_path):
 
 
 @cli.command()
-@click.option("--learning-strategy", required=False, default = 'DQN', 
-type = click.Choice(['DQN', 'DDQN']), help="Train the agent using DQN or DDQN.")
-@click.option("--update-type", required=False, default = 'soft', 
-type = click.Choice(['soft', 'hard']), help="Use soft updates or hard updates for 'fixed-Q' TD targets.")
-@click.option("--n-episodes", required=False, default=4000, help="Number of episodes after which training will terminate.")
-@click.option("--headless", required=False, is_flag=True, 
-help="Train the agent using the headless environment.")
-@click.option("--keep-training", required=False, is_flag=True,
- help="Continue training the agent up to n-episodes after the solved condition is met.")
-@click.option("--checkpoint", required=False, type=str, default=None, help="Path to a previously trained Agent's PyTorch checkpoint, if specified the Agents network will be initialised using the weights therein.")
+@click.option("--learning-strategy", required=False, default = 'DQN', \
+    type = click.Choice(['DQN', 'DDQN']), help="Train the agent using DQN or DDQN.")
+@click.option("--update-type", required=False, default = 'soft', \
+    type = click.Choice(['soft', 'hard']), \
+        help="Use soft updates or hard updates for 'fixed-Q' TD targets.")
+@click.option("--n-episodes", required=False, default=4000, \
+    help="Number of episodes after which training will terminate.")
+@click.option("--headless", required=False, is_flag=True, \
+    help="Train the agent using the headless environment.")
+@click.option("--keep-training", required=False, is_flag=True, \
+    help="Continue training the agent up to n-episodes after the solved condition is met.")
+@click.option("--checkpoint", required=False, type=str, default=None, \
+    help="""
+    Path to a previously trained Agent's PyTorch checkpoint, if specified the 
+    Agents network will be initialised using the weights therein.""")
 def train(learning_strategy, update_type, n_episodes, headless, checkpoint, keep_training):
+    """Program to train an agent using a training strategy specified by LEARNING-STRATEGY
+    and UPDATE-TYPE. The agent is trained up to N-EPISODES if KEEP-TRAINING is set,
+    otherwise the training can terminate earlier if the solved condition is met.
+    """
     env = get_env(headless)
 
     action_size, state_size = get_env_properties(env)
@@ -191,6 +204,8 @@ def train(learning_strategy, update_type, n_episodes, headless, checkpoint, keep
 
 @cli.command()
 def plot_results():
+    """Plot results from scores stored in the results directory.
+    """
     results_directories = os.listdir(results_directory)
     n_directories = len(results_directories)
     scale = 3.0
@@ -217,14 +232,6 @@ def plot_results():
         ax.set_xlabel("Episodes")
         ax.set_ylabel("Score")
 
-    #plt.axhline(y=13, ls='dashed', color='k', label='solved')
-    #yticks = range(0, 25, 2)
-    #ax.set_yticks(yticks)
-
-    #fname = f'resources/{learning_strategy}_scores.png' if learning_strategy is not None else 'resources/all_scores.png'
-
-    #scores_plot = os.path.join(solution_directory, fname)
-    #plt.legend()
 
     plt.figure(fig.number)
     plt.tight_layout(pad=1.2)
