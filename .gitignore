@@ -2,8 +2,8 @@
 .vscode/
 *.ipynb
 __pycache__/
-/checkpoints/
-!/checkpoints/solved_checkpoint.pth
+checkpoints/*
+!checkpoints/solved_checkpoint.pth
 /src/
 unity_environments/
 unity-environment.log
