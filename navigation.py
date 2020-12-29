@@ -164,7 +164,8 @@ def run(checkpoint_path):
 @click.option("--checkpoint", required=False, type=str, default=None, \
     help="""
     Path to a previously trained Agent's PyTorch checkpoint, if specified the 
-    Agents network will be initialised using the weights therein.""")
+    Agents network will be initialised using the weights therein.
+    """)
 def train(learning_strategy, update_type, n_episodes, headless, checkpoint, keep_training):
     """Program to train an agent using a training strategy specified by LEARNING-STRATEGY
     and UPDATE-TYPE. The agent is trained up to N-EPISODES if KEEP-TRAINING is set,

@@ -3,7 +3,7 @@
 
 ## Project Details
 
-Read about the environment [here](https://github.com/udacity/deep-reinforcement-learning/tree/master/p1_navigation).
+Read about the environment [here](https://github.com/udacity/deep-reinforcement-learning/tree/master/p1_navigation), and also in the included [report](Report.md). To obtain the results presented at the bottom of this file, an agent was trained to explore an environment with a 32-dimensional vector representation. The components of the vector describe the agents location, orientation and ray-based perception of the environment visible to it. The agent can take 4 actions: move forwards, move backwards, turn left and turn right.
 
 Agents explore a large, square, bounded environment filled with blue and yellow bananas. Agent's receive a reward of +1 for collecting yellow bananas, and a reward of -1 for collecting blue bananas.
 
@@ -12,7 +12,7 @@ The environment is considered to have been resolved when the agent collects an a
 
 ## Getting Started
 
-The `setup_env.sh` script can be used to create and configure an environment with all the required dependencies to run the included code. The script assumes `conda` is available.
+The `setup_env.sh` script can be used to create and configure an environment with all the required dependencies to run the included code. The script assumes `conda` is available. 
 
 In addition, a number of pre-built _Unity_ environments are required. They can be
 obtained by running the included script `./get_unity_envs.sh`. Alternatively, 
@@ -37,9 +37,9 @@ Options:
   --help  Show this message and exit.
 
 Commands:
-  plot-results
-  run
-  train
+  plot-results  Plot results from scores stored in the results directory.
+  run           Program that initialises an agent using saved DQN weights...
+  train         Program to train an agent using a training strategy...
   ```
   
 1) For training an agent:
@@ -48,6 +48,8 @@ Commands:
     * `python ./navigation.py run` 
 3) For plotting saved results:
     * `python ./navigation.py plot-results`
+
+### Training an agent
 
 Train an agent using the following command:
 
@@ -77,6 +79,14 @@ Options:
   --help                          Show this message and exit.
 ```
 
+#### Example
+
+To train the agent for a maximum of 2000 episodes using DDQN and soft fixed-Q target network updates, but allowing the training to terminate earlier if the environment is solved, run:
+
+`python ./navigation.py train`
+
+### Running a trained agent
+
 See a trained agent navigate the environment by running the following command. With no options specified the agent will be initialised using the `solved_weights.pth` included in the `./checkpoints` directory.
 
 ```
@@ -89,6 +99,9 @@ Options:
 
   --help                  Show this message and exit.
 ```
+
+#### Example
+`python ./navigation.py run`
 
 ## Results
 
