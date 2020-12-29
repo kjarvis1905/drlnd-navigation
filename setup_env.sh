@@ -2,7 +2,14 @@
 
 FILE=`readlink -f $0`
 DIR=`dirname $FILE`
-ENV_NAME="drlndtest"
+
+if [ "$#" -ne 1 ]
+then
+    echo "Please provide environment name as an argument"
+    exit 1
+fi
+
+ENV_NAME="$1"
 
 # Eval the conda bash hook
 
@@ -15,7 +22,7 @@ ENV_FILE="$DIR/conda_env.yml"
 if ! command -v conda &> /dev/null
 then
     echo "conda could not be found"
-    exit
+    exit 1
 fi
 
 echo "Creating conda environment"
@@ -24,7 +31,7 @@ conda create --name $ENV_NAME python=3.6
 
 if [ $? -eq 0 ]
 then
-    echo "Success!"
+    echo "Environment created successfully, continuing."
 fi
 
 conda activate $ENV_NAME
