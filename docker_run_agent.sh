@@ -3,12 +3,13 @@
 . env.sh
 
 CONTAINER_WORKDIR=/home/user/drl
-PYTHON_CMD="python navigation.py run"
 
-cmd="conda activate $CONDA_ENV && \
-cd $CONTAINER_WORKDIR && \
-$PYTHON_CMD"
+CONDA_CMD="conda run -n $CONDA_ENV python $CONTAINER_WORKDIR/navigation.py run"
 
-echo $cmd
+DOCKER_CMD="docker run \
+-it -v $(pwd):$CONTAINER_WORKDIR \
+$DOCKER_IMAGE_TAG \
+bash -c \"${CONDA_CMD}\""
 
-docker run -it -v $(pwd):$CONTAINER_WORKDIR $DOCKER_IMAGE_TAG bash -c $cmd
+echo $DOCKER_CMD
+eval $DOCKER_CMD

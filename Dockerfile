@@ -1,9 +1,10 @@
 FROM ubuntu:18.04
 
 RUN apt update && apt install -y --allow-unauthenticated --no-install-recommends \
-    wget ca-certificates vim git gdb libglvnd-dev libgl1-mesa-dev \
-    libegl1-mesa-dev libgles2-mesa-dev xvfb tmux libglu1-mesa-dev libosmesa6-dev \
-    ffmpeg curl patchelf libglfw3 libglfw3-dev cmake zlib1g zlib1g-dev swig
+    wget ca-certificates vim git gdb \
+    libglu1-mesa-dev libgl1-mesa-dev libosmesa6-dev xvfb ffmpeg curl patchelf \
+    libglfw3 libglfw3-dev cmake zlib1g zlib1g-dev swig
+    
 
 RUN useradd --create-home user
 USER user
