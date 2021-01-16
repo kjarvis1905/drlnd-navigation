@@ -7,10 +7,17 @@ import click
 import matplotlib.pyplot as plt
 import yaml
 from unityagents import UnityEnvironment
-from agent import Agent, LearningStrategy, TargetNetworkUpdateStrategy
-from utils import get_env, get_env_properties, get_next_results_directory, \
-    load_results, solution_directory, results_directory
+from drlnd.common.agent import Agent, LearningStrategy, TargetNetworkUpdateStrategy
+from drlnd.common.utils import get_env, get_env_properties, get_next_results_directory, \
+    load_results, path_from_project_home
 
+
+solution_directory = (
+    os.environ['PROJECT_HOME'] if ('PROJECT_HOME' in os.environ.keys()) 
+    else os.path.dirname(__file__)
+)
+results_directory = path_from_project_home('results')
+#checkpoint_directory = path_from_project_home('checkpoints')
 
 def unity_dqn(
     env: UnityEnvironment,
