@@ -17,8 +17,6 @@ eval "$(conda shell.bash hook)"
 
 # Setup the environment
 
-ENV_FILE="$DIR/conda_env.yml"
-
 if ! command -v conda &> /dev/null
 then
     echo "conda could not be found"
